@@ -37,3 +37,5 @@ out/
 .vscode/
 
 application-db.properties
+application-kafka.properties
+application-elasticsearch.properties
