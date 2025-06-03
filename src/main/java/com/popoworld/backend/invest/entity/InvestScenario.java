@@ -23,13 +23,15 @@ public class InvestScenario {
 
 //    private UUID chapterId;
 
-    @Column(columnDefinition = "json")
+    @Column(columnDefinition = "TEXT")
     private String story;
 
     private Boolean isCustom; //부모가 만든건지
 
+    @Column(name = "create_at")  // DB 컬럼명과 맞춤
     private LocalDateTime createAt;
 
+    @Column(name = "updated_at") // DB 컬럼명과 맞춤
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
