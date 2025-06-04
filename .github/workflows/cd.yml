@@ -32,7 +32,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: |
             build/libs/*.jar
-            docker-compose.yml
+            back-repo/docker-compose.yml
           target: /home/ubuntu/back-repo/
 
       - name: SSH to EC2 and redeploy Docker
