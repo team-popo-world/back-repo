@@ -19,10 +19,10 @@ jobs:
           java-version: '17'
 
       - name: Grant permission to Gradle wrapper
-        run: chmod +x back-repo/gradlew
+        run: chmod +x ./gradlew
 
       - name: Build Spring Boot app
-        run: cd back-repo && ./gradlew clean build -x test
+        run: ./gradlew clean build -x test
 
       - name: Copy JAR and docker-compose to EC2
         uses: appleboy/scp-action@v0.1.4
@@ -31,8 +31,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: |
-            back-repo/build/libs/*.jar
-            back-repo/docker-compose.yml
+            build/libs/*.jar
+            docker-compose.yml
           target: /home/ubuntu/back-repo/
 
       - name: SSH to EC2 and redeploy Docker container
