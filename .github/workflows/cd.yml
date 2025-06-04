@@ -12,9 +12,6 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Move to back-repo
-        run: cd back-repo && pwd
-
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -22,16 +19,15 @@ jobs:
           java-version: '17'
 
       - name: Grant permission to Gradle wrapper
-        run: cd back-repo && chmod +x ./gradlew
+        run: chmod +x ./gradlew
 
       - name: Build Spring Boot app
-        run: cd back-repo && ./gradlew clean build -x test
+        run: ./gradlew clean build -x test
 
       - name: Debug all files before copy
         run: |
-            echo "Listing all files:"
-            find back-repo -type f
-
+          echo "Listing all files:"
+          find . -type f
 
       - name: Copy JAR and docker-compose to EC2
         uses: appleboy/scp-action@v0.1.4
@@ -40,8 +36,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: |
-              back-repo/build/libs/*.jar
-              back-repo/docker-compose.yml
+            build/libs/*.jar
+            docker-compose.yml
           target: /home/ubuntu/back-repo/
 
       - name: SSH to EC2 and redeploy Docker container
