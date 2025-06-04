@@ -6,8 +6,6 @@ import com.popoworld.backend.invest.entity.InvestHistory;
 import com.popoworld.backend.invest.entity.InvestScenario;
 import com.popoworld.backend.invest.entity.InvestSession;
 import com.popoworld.backend.invest.investHistoryKafka.InvestHistoryKafkaProducer;
-import com.popoworld.backend.invest.repository.InvestChapterRepository;
-import com.popoworld.backend.invest.repository.InvestHistoryMongoRepository;
 import com.popoworld.backend.invest.repository.InvestScenarioRepository;
 import com.popoworld.backend.invest.repository.InvestSessionRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,16 +30,13 @@ public class InvestController {
     @Autowired
     private InvestScenarioRepository investScenarioRepository;
 
-    @Autowired
-    private InvestHistoryMongoRepository investHistoryMongoRepository;
+
     @Autowired
     private InvestHistoryKafkaProducer investHistoryKafkaProducer;
 
     @Autowired
     private InvestSessionRepository investSessionRepository;
 
-    @Autowired
-    private InvestChapterRepository investChapterRepository;
 
     @Operation(
             summary = "챕터별 스토리 조회",
@@ -223,13 +218,6 @@ public class InvestController {
     }
 
     @PutMapping("/scenario/update")
-    @Operation(
-            summary = "가장 오래된 시나리오 업데이트",
-            description = "ML에서 받은 데이터로 가장 오래된 시나리오를 업데이트하고 updatedAt을 현재 시간으로 설정"
-    )
-    @ApiResponse(responseCode = "200", description = "성공 (시나리오 업데이트 완료)")
-    @ApiResponse(responseCode = "404", description = "업데이트할 시나리오가 없음")
-    @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     public ResponseEntity<String> updateOldestScenario(
             @RequestBody Map<String, Object> requestData) {
 
@@ -238,30 +226,30 @@ public class InvestController {
             String story = (String) requestData.get("story");
             Boolean isCustom = (Boolean) requestData.get("isCustom");
 
-            // 가장 오래된 시나리오 찾기 (createdAt 기준 오름차순 정렬)
-            InvestScenario oldestScenario = investScenarioRepository.findTopByOrderByCreateAtAsc();
+            // 업데이트되지 않은 것 중에서 가장 오래된 시나리오 찾기
+            InvestScenario oldestScenario = investScenarioRepository.findTopByUpdatedAtIsNullOrderByCreateAtAsc();
 
             if (oldestScenario == null) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.badRequest().body("업데이트할 시나리오가 없습니다. 모든 시나리오가 이미 업데이트되었습니다.");
             }
 
             // 시나리오 업데이트
             LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
             InvestScenario updatedScenario = new InvestScenario(
-                    oldestScenario.getScenarioId(),  // 기존 ID 유지
-                    oldestScenario.getChildId(),     // 기존 childId 유지
+                    oldestScenario.getScenarioId(),
+                    oldestScenario.getChildId(),
                     story,                           // 새로운 story
                     isCustom,                        // 새로운 isCustom
                     oldestScenario.getCreateAt(),    // 기존 createdAt 유지
                     now,                             // updatedAt을 현재 시간으로 설정
-                    oldestScenario.getInvestChapter(), // 기존 관계 유지
-                    oldestScenario.getInvestSessions() // 기존 관계 유지
+                    oldestScenario.getInvestChapter(),
+                    oldestScenario.getInvestSessions()
             );
 
             investScenarioRepository.save(updatedScenario);
 
-            return ResponseEntity.ok("✅ 가장 오래된 시나리오가 업데이트되었습니다. ID: " + oldestScenario.getScenarioId());
+            return ResponseEntity.ok("✅ 가장 오래된 미업데이트 시나리오가 업데이트되었습니다. ID: " + oldestScenario.getScenarioId());
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError()

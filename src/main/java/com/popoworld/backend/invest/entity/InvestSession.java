@@ -30,6 +30,6 @@ public class InvestSession {
     private Integer profit;
 
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="scenarioId")
+    @JoinColumn(name="scenario_id")
     private InvestScenario investScenario;
 }
