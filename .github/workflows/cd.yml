@@ -1,0 +1,52 @@
+name: CD - Deploy to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Grant permission to Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build Spring Boot app
+        run: ./gradlew clean build -x test
+
+      - name: Debug files before copy
+        run: |
+          echo "=== All files ==="
+          find . -type f
+
+      - name: Copy JAR and docker-compose to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: |
+            build/libs/*.jar
+          target: /home/ubuntu/back-repo/
+
+      - name: SSH to EC2 and redeploy Docker container
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/back-repo
+            docker-compose down || true
+            docker-compose build
+            docker-compose up -d
