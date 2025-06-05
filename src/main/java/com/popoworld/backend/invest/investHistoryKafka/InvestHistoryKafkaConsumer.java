@@ -15,15 +15,22 @@ public class InvestHistoryKafkaConsumer {
 
     @KafkaListener(topics = "invest-history", groupId = "invest-consumer-group")
     public void consume(String message) {
+        System.out.println("🔍 Kafka 메시지 수신: " + message);
+
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
 
             InvestHistory history = objectMapper.readValue(message, InvestHistory.class);
-            investHistoryMongoRepository.save(history);
-            System.out.println("✅ InvestHistory MongoDB 저장 완료: " + history.getId());
+            System.out.println("📝 파싱된 데이터: " + history.toString());
+
+            InvestHistory savedHistory = investHistoryMongoRepository.save(history);
+            System.out.println("✅ MongoDB 저장 완료 - ID: " + savedHistory.getId());
+            System.out.println("📊 저장된 데이터 확인: " + savedHistory);
+
         } catch (Exception e) {
-            System.err.println("❌ InvestHistory 메시지 파싱 실패: " + message);
+            System.err.println("❌ 에러 발생 - 메시지: " + message);
+            System.err.println("❌ 에러 내용: " + e.getMessage());
             e.printStackTrace();
         }
     }
