@@ -38,10 +38,11 @@ dependencies {
 	// kafak
 	implementation 'org.springframework.kafka:spring-kafka'
 	// mongodb
-//	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	// elasticserach
-//	implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
-//	implementation 'co.elastic.clients:elasticsearch-java:8.11.1'
+	implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+	implementation 'co.elastic.clients:elasticsearch-java:8.11.1'
+
 }
 
 tasks.named('test') {
