@@ -12,13 +12,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,28 +38,53 @@ public class InvestController {
     private InvestSessionRepository investSessionRepository;
 
 
+    @GetMapping("/chapter")
     @Operation(
-            summary = "챕터별 스토리 조회",
-            description = "chapterId로 JSON 형식의 스토리를 문자열로 반환"
+            summary = "챕터별 스토리 조회 및 게임 세션 시작",
+            description = "chapterId로 JSON 형식의 스토리를 반환하고 새로운 게임 세션을 생성"
     )
-    @ApiResponse(responseCode = "200", description = "성공 (JSON 문자열 반환)")
+    @ApiResponse(responseCode = "200", description = "성공 (JSON 문자열 + 세션 ID 반환)")
     @ApiResponse(responseCode = "404", description = "해당 챕터 ID 없음")
     @ApiResponse(responseCode = "500", description = "서버 내부 오류")
-    @GetMapping("/chapter")
-    public ResponseEntity<String> getChapterData(@RequestParam UUID chapterId) {
+    public ResponseEntity<Map<String, Object>> getChapterData(@RequestParam UUID chapterId) {
         try {
             InvestScenario scenario = investScenarioRepository.findByInvestChapter_ChapterId(chapterId);
             if (scenario == null) {
                 return ResponseEntity.notFound().build();
             }
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(scenario.getStory());
+
+            // 새로운 게임 세션 생성
+            UUID sessionId = UUID.randomUUID();
+            UUID childId = UUID.fromString("c1111111-2222-3333-4444-555555555555"); // 임시 childId
+            LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
+            InvestSession newSession = new InvestSession(
+                    sessionId,        // 새로 생성한 세션 ID
+                    childId,          // 임시 childId
+                    chapterId,        // URL에서 받은 chapterId
+                    now,              // startedAt - 현재 시간
+                    null,             // endedAt - 아직 게임이 안 끝남
+                    null,             // success - 아직 모름
+                    null,             // profit - 아직 모름
+                    scenario          // 조회한 scenario 객체
+            );
+
+            // 세션 저장
+            investSessionRepository.save(newSession);
+
+            // 응답 데이터 구성
+            Map<String, Object> response = new HashMap<>();
+            response.put("sessionId", sessionId.toString());
+            response.put("story", scenario.getStory());
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
+    //검토 안했음. 카프카 몽고 로그데이터라 나중에 검토하기
     @PostMapping("/chapter")
     @Operation(
             summary = "게임 턴 정보 업데이트",
@@ -74,8 +99,11 @@ public class InvestController {
             @RequestBody Map<String, Object> requestData) {
 
         try {
-            // 백엔드에서 설정하는 임시 값들
-            UUID investSessionId = UUID.fromString("a1111111-2222-3333-4444-555555555555");
+            // 프론트에서 받은 sessionId
+            String sessionIdStr = (String) requestData.get("sessionId");
+            UUID investSessionId = UUID.fromString(sessionIdStr);
+
+            // 임시 childId (나중에 JWT에서 가져올 예정)
             UUID childId = UUID.fromString("c1111111-2222-3333-4444-555555555555");
 
             // InvestHistory 객체 생성
@@ -88,11 +116,11 @@ public class InvestController {
 
             InvestHistory history = new InvestHistory(
                     UUID.randomUUID(),
-                    investSessionId,
+                    investSessionId,     // 프론트에서 받은 sessionId 사용
                     chapterId,
                     childId,
                     turn,
-                    (Integer) requestData.get("risk_level"),
+                    (String) requestData.get("risk_level"),
                     (Integer) requestData.get("current_point"),
                     (Integer) requestData.get("before_value"),
                     (Integer) requestData.get("current_value"),
@@ -102,8 +130,8 @@ public class InvestController {
                     (String) requestData.get("transaction_type"),
                     (Integer) requestData.get("plus_click"),
                     (Integer) requestData.get("minus_click"),
-                    startedAt,   // ⏰ 여기 추가
-                    endedAt      // ⏰ 여기도 유지
+                    startedAt,
+                    endedAt
             );
 
             // 카프카로 전송
@@ -124,52 +152,51 @@ public class InvestController {
     @PostMapping("/clear/chapter")
     @Operation(
             summary = "게임 종료 또는 클리어 정보 저장",
-            description = "게임 완료 시 성공 여부, 수익률, 시작/종료 시간을 InvestSession 테이블에 저장"
+            description = "게임 완료 시 기존 세션의 성공 여부, 수익률, 종료 시간을 업데이트"
     )
-    @ApiResponse(responseCode = "200", description = "성공 (게임 세션 저장 완료)")
-    @ApiResponse(responseCode = "400", description = "해당 챕터 시나리오를 찾을 수 없음")
+    @ApiResponse(responseCode = "200", description = "성공 (게임 세션 업데이트 완료)")
+    @ApiResponse(responseCode = "400", description = "해당 세션을 찾을 수 없음")
     @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     public ResponseEntity<String> clearChapter(
             @RequestParam UUID chapterId,
             @RequestBody Map<String, Object> requestData) {
 
         try {
-            // chapterId로 InvestScenario 조회
-            InvestScenario scenario = investScenarioRepository.findByInvestChapter_ChapterId(chapterId);
-
-            if (scenario == null) {
-                return ResponseEntity.badRequest().body("해당 챕터 시나리오를 찾을 수 없습니다.");
-            }
-
             // 프론트에서 받은 데이터
+            String sessionIdStr = (String) requestData.get("sessionId");
+            UUID sessionId = UUID.fromString(sessionIdStr);
             Boolean success = (Boolean) requestData.get("success");
             Integer profit = (Integer) requestData.get("profit");
-            String startedAtString = (String) requestData.get("started_at");
 
-            // started_at 문자열을 LocalDateTime으로 변환
-            LocalDateTime startedAt = LocalDateTime.parse(startedAtString);
-            // 한국 시간으로 현재 시간 계산
+            // sessionId로 기존 세션 찾기
+            InvestSession existingSession = investSessionRepository.findById(sessionId).orElse(null);
+
+            if (existingSession == null) {
+                return ResponseEntity.badRequest().body("해당 게임 세션을 찾을 수 없습니다.");
+            }
+
+            // 기존 세션 업데이트
             LocalDateTime endedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-            // InvestSession 객체 생성
-            InvestSession session = new InvestSession(
-                    UUID.randomUUID(),           // investSessionId
-                    scenario.getChildId(),       // scenario에서 가져온 childId
-                    chapterId,                   // URL에서 받은 chapterId
-                    startedAt,                   // 프론트에서 받은 시간
-                    endedAt,                     // 현재 시간
-                    success,
-                    profit,
-                    scenario                     // 조회한 scenario 객체
+
+            InvestSession updatedSession = new InvestSession(
+                    existingSession.getInvestSessionId(),  // 기존 세션 ID 유지
+                    existingSession.getChildId(),          // 기존 childId 유지
+                    existingSession.getChapterId(),        // 기존 chapterId 유지
+                    existingSession.getStartedAt(),        // 기존 시작 시간 유지
+                    endedAt,                               // 종료 시간은 현재 시간
+                    success,                               // 프론트에서 받은 성공 여부
+                    profit,                                // 프론트에서 받은 수익률
+                    existingSession.getInvestScenario()    // 기존 scenario 유지
             );
 
-            // DB에 저장
-            investSessionRepository.save(session);
+            // 업데이트된 세션 저장
+            investSessionRepository.save(updatedSession);
 
-            return ResponseEntity.ok("✅ 게임 세션이 성공적으로 저장되었습니다.");
+            return ResponseEntity.ok("✅ 게임 세션이 성공적으로 업데이트되었습니다.");
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body("❌ 저장 실패: " + e.getMessage());
+                    .body("❌ 업데이트 실패: " + e.getMessage());
         }
     }
 

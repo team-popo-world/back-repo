@@ -33,7 +33,7 @@ public class InvestHistory {
     private Integer turn; //턴 구분
 
     @NotNull
-    private Integer riskLevel; //종목 위험도
+    private String riskLevel; //종목 위험도
 
     @NotNull
     private Integer currentPoint; //현재 포인트
