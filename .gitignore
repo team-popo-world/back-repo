@@ -38,3 +38,4 @@ out/
 
 application-db.properties
 application-kafka.properties
+Dockerfile
