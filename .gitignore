@@ -36,10 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 
-application-db.properties
-application-kafka.properties
-application-elasticsearch.properties
-
 Dockerfile
 docker-compose.yml
 
