@@ -15,4 +15,7 @@ public interface InvestScenarioRepository extends JpaRepository<InvestScenario, 
     //InvestScenario 엔티티의 investChapter 필드
 
     InvestScenario findTopByUpdatedAtIsNullOrderByCreateAtAsc();
+
+    // 새로 추가 - 특정 챕터 중에서 가장 오래된 미업데이트 시나리오 찾기
+    InvestScenario findTopByInvestChapter_ChapterIdAndUpdatedAtIsNullOrderByCreateAtAsc(String chapterId);
 }
