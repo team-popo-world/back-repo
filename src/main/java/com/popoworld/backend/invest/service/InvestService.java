@@ -28,7 +28,7 @@ public class InvestService {
     private final InvestSessionRepository investSessionRepository;
     private final InvestHistoryKafkaProducer investHistoryKafkaProducer;
 
-    public ChapterDataResponse getChapterDataAndCreateSession(UUID chapterId){
+    public ChapterDataResponse getChapterDataAndCreateSession(String chapterId){
         // 1. 시나리오 조회
         InvestScenario scenario = investScenarioRepository.findByInvestChapter_ChapterId(chapterId);
         if(scenario==null){
@@ -57,7 +57,7 @@ public class InvestService {
         return new ChapterDataResponse(sessionId.toString(), scenario.getStory());
     }
 
-    public ClearChapterResponse clearChapter(UUID chapterId, ClearChapterRequest request){
+    public ClearChapterResponse clearChapter(String chapterId, ClearChapterRequest request){
         // 1. sessionId 변환
         UUID sessionId = UUID.fromString(request.getSessionId());
 
@@ -89,7 +89,7 @@ public class InvestService {
         return new ClearChapterResponse("✅ 게임 세션이 성공적으로 업데이트되었습니다.");
 
     }
-    public TurnDataResponse updateGameData(UUID chapterId, Integer turn, TurnDataRequest request) {
+    public TurnDataResponse updateGameData(String chapterId, Integer turn, TurnDataRequest request) {
         // 1. sessionId 변환
         UUID investSessionId = UUID.fromString(request.getSessionId());
 

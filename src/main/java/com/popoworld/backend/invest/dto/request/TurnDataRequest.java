@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 public class TurnDataRequest {
     private String sessionId;
 
+    private String chapterId;
+
+    private Integer turn;
+
     @JsonProperty("started_at")
     private String startedAt;
 

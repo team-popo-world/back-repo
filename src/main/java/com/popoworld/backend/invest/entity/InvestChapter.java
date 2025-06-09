@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -17,7 +16,7 @@ import java.util.UUID;
 public class InvestChapter {
 
     @Id
-    private UUID chapterId;
+    private String chapterId;
 
     private String chapterName;
 

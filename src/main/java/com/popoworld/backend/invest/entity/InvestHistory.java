@@ -24,7 +24,7 @@ public class InvestHistory {
     private UUID investSessionId; //게임 구분
 
     @NotNull
-    private UUID chapterId; //챕터 구분
+    private String chapterId; //챕터 구분
 
     @NotNull
     private UUID childId; //사용자 구분
