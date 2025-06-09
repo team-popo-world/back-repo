@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Repository
 public interface InvestScenarioRepository extends JpaRepository<InvestScenario, UUID> {
-    InvestScenario findByInvestChapter_ChapterId(UUID chapterId);
+    InvestScenario findByInvestChapter_ChapterId(String chapterId);
     //실제 실행되는 쿼리
     //SELECT * FROM invest_scenario
     //WHERE chapter_id = ?

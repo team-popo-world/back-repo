@@ -19,7 +19,7 @@ public class InvestSession {
 
     private UUID childId;
 
-    private UUID chapterId;
+    private String chapterId;
 
     private LocalDateTime startedAt;
 

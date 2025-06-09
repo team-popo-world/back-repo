@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClearChapterRequest {
+public class ChapterRequest {
     private String chapterId;
-    private String sessionId;
-    private Boolean success;
-    private Integer profit;
 }
