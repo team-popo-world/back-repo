@@ -6,7 +6,6 @@ import com.popoworld.backend.quest.dto.QuestStateChangeRequest;
 import com.popoworld.backend.quest.entity.Quest;
 import com.popoworld.backend.quest.enums.QuestState;
 import com.popoworld.backend.quest.repository.QuestRepository;
-// import com.popoworld.backend.quest.scheduler.DailyQuestScheduler; // ❌ 이 줄 삭제!
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class QuestService {
     private final QuestRepository questRepository;
-    // private final DailyQuestScheduler dailyQuestScheduler; // ❌ 이 줄 삭제!
 
     //타입 별 퀘스트 목록 조회
     public List<QuestResponse> getQuestsByType(UUID childId, String type){
